@@ -59,6 +59,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [[tool.poetry.source]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
+name = "tsinghua"
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+default = true

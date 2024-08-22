@@ -78,9 +78,9 @@ class Config(dict):
         # 数据库相关配置
         "DB_HOST": "127.0.0.1",
         "DB_PORT": 5432,
-        "DB_USER": "root",
+        "DB_USER": "postgres",
         "DB_PASSWORD": "Password123@postgres",
-        "DB_ENGINE": "django.db.backends.postgresql_psycopg2",
+        "DB_ENGINE": "django.db.backends.postgresql",
         # 向量模型
         "EMBEDDING_MODEL_NAME": "shibing624/text2vec-base-chinese",
         "EMBEDDING_DEVICE": "cpu",
