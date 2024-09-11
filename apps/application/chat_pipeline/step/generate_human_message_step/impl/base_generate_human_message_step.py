@@ -6,6 +6,7 @@
     @date：2024/1/10 17:50
     @desc:
 """
+import logging
 from typing import List, Dict
 
 from langchain.schema import BaseMessage, HumanMessage
@@ -16,6 +17,8 @@ from application.chat_pipeline.step.generate_human_message_step.i_generate_human
 from application.models import ChatRecord
 from common.util.split_model import flat_map
 
+max_kb_error = logging.getLogger("max_kb_error")
+max_kb = logging.getLogger("max_kb")
 
 class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
 
@@ -35,9 +38,15 @@ class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
         history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
                            for index in
                            range(start_index if start_index > 0 else 0, len(history_chat_record))]
-        return [*flat_map(history_message),
+        message_list = [*flat_map(history_message),
                 self.to_human_message(prompt, exec_problem_text, max_paragraph_char_number, paragraph_list,
                                       no_references_setting)]
+        
+        for message in message_list:
+            if len(message.content) != 0:
+                max_kb.info(f"base_gennerate_human_message_step content: {message.content}")
+        
+        return message_list
 
     @staticmethod
     def to_human_message(prompt: str,
@@ -54,6 +63,7 @@ class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
         temp_data = ""
         data_list = []
         for p in paragraph_list:
+            # 排序。分数
             content = f"{p.title}:{p.content}"
             temp_data += content
             if len(temp_data) > max_paragraph_char_number:

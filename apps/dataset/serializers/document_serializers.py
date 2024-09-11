@@ -378,7 +378,12 @@ class DocumentSerializers(ApiMixin, serializers.Serializer):
                     QuerySet(model=ProblemParagraphMapping).filter(document_id=document_id).delete()
                     # 删除向量库
                     ListenerManagement.delete_embedding_by_document_signal.send(document_id)
-                    paragraphs = get_split_model('web.md').parse(result.content)
+                    # paragraphs = get_split_model('web.md').parse(result.content)
+                    text = result.content
+                    text = text.replace('\r\n', '\n')
+                    text = text.replace('\r', '\n')
+                    text = text.replace("\0", '')
+                    paragraphs = [{'title':'a','content':text}]
                     document.char_length = reduce(lambda x, y: x + y,
                                                   [len(p.get('content')) for p in paragraphs],
                                                   0)

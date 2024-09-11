@@ -7,7 +7,9 @@
     @desc:
 """
 import os
+import logging
 from typing import List, Dict
+
 
 from django.db.models import QuerySet
 
@@ -22,6 +24,8 @@ from setting.models import Model
 from setting.models_provider import get_model
 from smartdoc.conf import PROJECT_DIR
 
+max_kb_error = logging.getLogger("max_kb_error")
+max_kb = logging.getLogger("max_kb")
 
 def get_model_by_id(_id, user_id):
     model = QuerySet(Model).filter(id=_id).first()
@@ -63,18 +67,23 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             return []
         paragraph_list = self.list_paragraph(embedding_list, vector)
         result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list]
+        for paragraph in result:
+            max_kb.info(f"search_dataset_step dataset_id:{paragraph.dataset_id} dataset_name:{paragraph.dataset_name} document_id:{paragraph.document_id} document_name:{paragraph.document_name} content:{paragraph.content}")
         return result
 
     @staticmethod
     def reset_paragraph(paragraph: Dict, embedding_list: List) -> ParagraphPipelineModel:
         filter_embedding_list = [embedding for embedding in embedding_list if
-                                 str(embedding.get('paragraph_id')) == str(paragraph.get('id'))]
+                                 str(embedding.paragraph_id) == str(paragraph.get('id'))]
         if filter_embedding_list is not None and len(filter_embedding_list) > 0:
             find_embedding = filter_embedding_list[-1]
+            # find_embedding.get('similarity')
+            # find_embedding.get('comprehensive_score')
+            #TODO 这里的comprehensive_score 应该是相似度的分数，但是现在没有找到合适的计算方式，先用相似度代替
             return (ParagraphPipelineModel.builder()
                     .add_paragraph(paragraph)
-                    .add_similarity(find_embedding.get('similarity'))
-                    .add_comprehensive_score(find_embedding.get('comprehensive_score'))
+                    .add_similarity(find_embedding.meta.get('comprehensive_score'))
+                    .add_comprehensive_score(find_embedding.meta.get('comprehensive_score'))
                     .add_dataset_name(paragraph.get('dataset_name'))
                     .add_document_name(paragraph.get('document_name'))
                     .add_hit_handling_method(paragraph.get('hit_handling_method'))
@@ -92,7 +101,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
 
     @staticmethod
     def list_paragraph(embedding_list: List, vector):
-        paragraph_id_list = [row.get('paragraph_id') for row in embedding_list]
+        paragraph_id_list = [row.paragraph_id for row in embedding_list]
         if paragraph_id_list is None or len(paragraph_id_list) == 0:
             return []
         paragraph_list = native_search(QuerySet(Paragraph).filter(id__in=paragraph_id_list),

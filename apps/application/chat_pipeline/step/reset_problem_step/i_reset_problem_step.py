@@ -34,11 +34,15 @@ class IResetProblemStep(IBaseChatPipelineStep):
         return self.InstanceSerializer
 
     def _run(self, manage: PipelineManage):
+        self.context["model_id"] = manage.context.get("model_id")
+        self.context["user_id"] = manage.context.get("user_id")
+        self.context["step_args"]["chat_model"] = manage.context.get("chat_model")
         padding_problem = self.execute(**self.context.get('step_args'))
         # 用户输入问题
         source_problem_text = self.context.get('step_args').get('problem_text')
         self.context['problem_text'] = source_problem_text
         self.context['padding_problem_text'] = padding_problem
+
         manage.context['problem_text'] = source_problem_text
         manage.context['padding_problem_text'] = padding_problem
         # 累加tokens

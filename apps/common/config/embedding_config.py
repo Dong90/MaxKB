@@ -48,10 +48,15 @@ class VectorStore:
 
     @staticmethod
     def get_embedding_vector() -> BaseVectorStore:
-        from embedding.vector.pg_vector import PGVector
+        # from embedding.vector.pg_vector import PGVector
+        from embedding.vector.es_kb_service import ESVector
+        from embedding.vector.es_kb_service import ElasticSearchVectorFactory
         if VectorStore.instance is None:
-            from smartdoc.const import CONFIG
-            vector_store_class = VectorStore.instance_map.get(CONFIG.get("VECTOR_STORE_NAME"),
-                                                              PGVector)
-            VectorStore.instance = vector_store_class()
+            # from smartdoc.const import CONFIG
+            # vector_store_class = VectorStore.instance_map.get(CONFIG.get("VECTOR_STORE_NAME"),
+            #                                                   PGVector)
+            # VectorStore.instance = vector_store_class()
+            es_vector = ElasticSearchVectorFactory.init_vector([])
+            VectorStore.instance = es_vector
+            
         return VectorStore.instance

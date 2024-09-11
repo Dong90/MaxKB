@@ -28,6 +28,8 @@ from common.constants.authentication_type import AuthenticationType
 from common.response import result
 from setting.models_provider.tools import get_model_instance_by_model_user_id
 
+max_kb_error = logging.getLogger("max_kb_error")
+max_kb = logging.getLogger("max_kb")
 
 def add_access_num(client_id=None, client_type=None):
     if client_type == AuthenticationType.APPLICATION_ACCESS_TOKEN.value:

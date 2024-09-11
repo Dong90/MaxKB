@@ -6,6 +6,7 @@
     @date：2024/1/10 14:35
     @desc:
 """
+import logging
 from typing import List
 
 from langchain.chat_models.base import BaseChatModel
@@ -15,6 +16,11 @@ from application.chat_pipeline.step.reset_problem_step.i_reset_problem_step impo
 from application.models import ChatRecord
 from common.util.split_model import flat_map
 
+from setting.models_provider.tools import get_model_instance_by_model_user_id
+
+max_kb_error = logging.getLogger("max_kb_error")
+max_kb = logging.getLogger("max_kb")
+
 prompt = (
     '()里面是用户问题,根据上下文回答揣测用户问题({question}) 要求: 输出一个补全问题,并且放在<data></data>标签中')
 
@@ -22,6 +28,7 @@ prompt = (
 class BaseResetProblemStep(IResetProblemStep):
     def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, chat_model: BaseChatModel = None,
                 **kwargs) -> str:
+        # chat_model = get_model_instance_by_model_user_id(str(self.context['model_id']), str(self.context['user_id']), **kwargs)
         if chat_model is None:
             self.context['message_tokens'] = 0
             self.context['answer_tokens'] = 0
@@ -47,6 +54,7 @@ class BaseResetProblemStep(IResetProblemStep):
             response_token = 0
         self.context['message_tokens'] = request_token
         self.context['answer_tokens'] = response_token
+        max_kb.info(f"base_reset_problem_step: {padding_problem} request_token:{request_token} response_token:{response_token}")
         return padding_problem
 
     def get_details(self, manage, **kwargs):

@@ -355,8 +355,8 @@ class ApplicationSerializer(serializers.Serializer):
     class Create(serializers.Serializer):
         user_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("用户id"))
 
-        @valid_license(model=Application, count=5,
-                       message='社区版最多支持 5 个应用，如需拥有更多应用，请联系我们（https://fit2cloud.com/）。')
+        @valid_license(model=Application, count=500,
+                       message='社区版最多支持 500 个应用，如需拥有更多应用，请联系我们（https://fit2cloud.com/）。')
         @transaction.atomic
         def insert(self, application: Dict):
             application_type = application.get('type')
@@ -448,10 +448,12 @@ class ApplicationSerializer(serializers.Serializer):
                                        self.data.get('similarity'),
                                        SearchMode(self.data.get('search_mode')),
                                        model)
-            hit_dict = reduce(lambda x, y: {**x, **y}, [{hit.get('paragraph_id'): hit} for hit in hit_list], {})
-            p_list = list_paragraph([h.get('paragraph_id') for h in hit_list])
-            return [{**p, 'similarity': hit_dict.get(p.get('id')).get('similarity'),
-                     'comprehensive_score': hit_dict.get(p.get('id')).get('comprehensive_score')} for p in p_list]
+            hit_dict = reduce(lambda x, y: {**x, **y}, [{hit.paragraph_id: hit} for hit in hit_list], {})
+            p_list = list_paragraph([h.paragraph_id for h in hit_list])
+            # test = hit_dict.get(p_list[0].get('id')).
+            # return [{**p, 'similarity': hit_dict.get('id').meta.get('similarity'),
+            #          'comprehensive_score': hit_dict.get(p.get('id')).meta.get('comprehensive_score')} for p in p_list]
+            return p_list
 
     class Query(serializers.Serializer):
         name = serializers.CharField(required=False, error_messages=ErrMessage.char("应用名称"))

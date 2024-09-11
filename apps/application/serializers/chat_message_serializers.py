@@ -7,6 +7,7 @@
     @desc:
 """
 import uuid
+import logging
 from typing import List
 from uuid import UUID
 
@@ -36,6 +37,8 @@ from setting.models import Model, Status
 
 chat_cache = caches['chat_cache']
 
+max_kb_error = logging.getLogger("max_kb_error")
+max_kb = logging.getLogger("max_kb")
 
 class ChatInfo:
     def __init__(self,
@@ -212,8 +215,10 @@ class ChatMessageSerializer(serializers.Serializer):
         # 构建运行参数
         params = chat_info.to_pipeline_manage_params(message, get_post_handler(chat_info), exclude_paragraph_id_list,
                                                      client_id, client_type, stream)
+        
         # 运行流水线作业
         pipeline_message.run(params)
+        # max_kb.info(f'pipeline_message chat_result:{pipeline_message.context['chat_result'].getvalue()}')
         return pipeline_message.context['chat_result']
 
     def chat_work_flow(self, chat_info: ChatInfo):

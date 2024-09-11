@@ -47,7 +47,7 @@ def start_services():
 
 
 def runserver():
-    management.call_command('runserver', "0.0.0.0:8080")
+    management.call_command('runserver', "0.0.0.0:8086")
 
 
 if __name__ == '__main__':
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         help="Action to run"
     )
     args = parser.parse_args()
-
+    
     action = args.action
     if action == "upgrade_db":
         perform_db_migrate()

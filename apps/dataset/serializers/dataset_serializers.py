@@ -442,7 +442,12 @@ class DataSetSerializers(serializers.ModelSerializer):
                     try:
                         document_name = child_link.tag.text if child_link.tag is not None and len(
                             child_link.tag.text.strip()) > 0 else child_link.url
-                        paragraphs = get_split_model('web.md').parse(response.content)
+                        # paragraphs = get_split_model('web.md').parse(response.content)
+                        text = response.content
+                        text = text.replace('\r\n', '\n')
+                        text = text.replace('\r', '\n')
+                        text = text.replace("\0", '')
+                        paragraphs = [{'title':'a','content':text}]
                         DocumentSerializers.Create(data={'dataset_id': dataset_id}).save(
                             {'name': document_name, 'paragraphs': paragraphs,
                              'meta': {'source_url': child_link.url, 'selector': selector},
@@ -619,7 +624,12 @@ class DataSetSerializers(serializers.ModelSerializer):
                     try:
                         document_name = child_link.tag.text if child_link.tag is not None and len(
                             child_link.tag.text.strip()) > 0 else child_link.url
-                        paragraphs = get_split_model('web.md').parse(response.content)
+                        # paragraphs = get_split_model('web.md').parse(response.content)
+                        text = response.content
+                        text = text.replace('\r\n', '\n')
+                        text = text.replace('\r', '\n')
+                        text = text.replace("\0", '')
+                        paragraphs = [{'title':'a','content':text}]
                         first = QuerySet(Document).filter(meta__source_url=child_link.url, dataset=dataset).first()
                         if first is not None:
                             # 如果存在,使用文档同步

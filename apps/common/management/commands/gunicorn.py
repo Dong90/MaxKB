@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     # 参数设定
     def add_arguments(self, parser):
-        parser.add_argument('-b', nargs='+', type=str, help="端口:0.0.0.0:8080")  # 0.0.0.0:8080
+        parser.add_argument('-b', nargs='+', type=str, help="端口:0.0.0.0:8086")  # 0.0.0.0:8080
         parser.add_argument('-k', nargs='?', type=str,
                             help="workers处理器:gevent")  # uvicorn.workers.UvicornWorker
         parser.add_argument('-w', type=str, help='worker 数量')  # 进程数量
@@ -32,7 +32,7 @@ class Command(BaseCommand):
         log_format = '%(h)s %(t)s %(L)ss "%(r)s" %(s)s %(b)s '
         cmd = [
             'gunicorn', 'smartdoc.wsgi:application',
-            '-b', options.get('b') if options.get('b') is not None else '0.0.0.0:8080',
+            '-b', options.get('b') if options.get('b') is not None else '0.0.0.0:8086',
             '-k', options.get('k') if options.get('k') is not None else 'gthread',
             '--threads', options.get('threads') if options.get('threads') is not None else '200',
             '-w', options.get('w') if options.get('w') is not None else '1',
