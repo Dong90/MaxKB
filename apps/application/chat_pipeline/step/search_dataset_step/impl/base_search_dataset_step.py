@@ -98,10 +98,11 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         
         chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None  
         str = chat_model.invoke(message_list)
+        self.context["is_llm"] = False 
         if "没有在知识库中查找到相关信息，建议咨询相关技术支持或参考官方文档进行操作" in str.content:
             paragraph_list = None
+            self.context["is_llm"] = True
             return []
-
 
         return result
 

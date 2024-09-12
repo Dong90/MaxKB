@@ -71,6 +71,7 @@ class ISearchDatasetStep(IBaseChatPipelineStep):
     def _run(self, manage: PipelineManage):     
         paragraph_list = self.execute(**self.context['step_args'])
         manage.context['paragraph_list'] = paragraph_list
+        manage.context["is_llm"] = self.context["is_llm"]
         self.context['paragraph_list'] = paragraph_list
 
     @abstractmethod

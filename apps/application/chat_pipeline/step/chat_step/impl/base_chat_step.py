@@ -150,7 +150,8 @@ class BaseChatStep(IChatStep):
                           chat_model: BaseChatModel = None,
                           paragraph_list=None,
                           no_references_setting=None,
-                          problem_text=None):
+                          problem_text=None,
+                          is_llm=None):
         if paragraph_list is None:
             paragraph_list = []
         directly_return_chunk_list = [AIMessageChunk(content=paragraph.content)
@@ -181,7 +182,7 @@ class BaseChatStep(IChatStep):
                        no_references_setting=None):
     
         chat_result, is_ai_chat = self.get_stream_result(message_list, chat_model, paragraph_list,
-                                                         no_references_setting, problem_text)
+                                                         no_references_setting, problem_text,manage.context["is_llm"])
         chat_record_id = uuid.uuid1()
         r = StreamingHttpResponse(
             streaming_content=event_content(chat_result, chat_id, chat_record_id, paragraph_list,
