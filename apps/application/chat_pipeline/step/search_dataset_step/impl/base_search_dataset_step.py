@@ -12,6 +12,7 @@ from typing import List, Dict
 
 
 from django.db.models import QuerySet
+from langchain.schema import BaseMessage, HumanMessage
 
 from application.chat_pipeline.I_base_chat_pipeline import ParagraphPipelineModel
 from application.chat_pipeline.step.search_dataset_step.i_search_dataset_step import ISearchDatasetStep
@@ -23,6 +24,12 @@ from embedding.models import SearchMode
 from setting.models import Model
 from setting.models_provider import get_model
 from smartdoc.conf import PROJECT_DIR
+from setting.models_provider.tools import get_model_instance_by_model_user_id
+from application.models import ChatRecord
+from common.util.split_model import flat_map
+
+max_kb_error = logging.getLogger("max_kb_error")
+max_kb = logging.getLogger("max_kb")
 
 max_kb_error = logging.getLogger("max_kb_error")
 max_kb = logging.getLogger("max_kb")
@@ -48,17 +55,24 @@ def get_embedding_id(dataset_id_list):
 class BaseSearchDatasetStep(ISearchDatasetStep):
 
     def execute(self, problem_text: str, dataset_id_list: list[str], exclude_document_id_list: list[str],
-                exclude_paragraph_id_list: list[str], top_n: int, similarity: float, padding_problem_text: str = None,
+                exclude_paragraph_id_list: list[str], top_n: int, similarity: float,
+                dialogue_number: int,
+                max_paragraph_char_number: int,
+                prompt: str,
+                history_chat_record: List[ChatRecord],
+                no_references_setting=None,
+                padding_problem_text: str = None,
                 search_mode: str = None,
                 user_id=None,
+                model_id=None,   
                 **kwargs) -> List[ParagraphPipelineModel]:
         if len(dataset_id_list) == 0:
             return []
         exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
-        model_id = get_embedding_id(dataset_id_list)
-        model = get_model_by_id(model_id, user_id)
+        embedding_model_id = get_embedding_id(dataset_id_list)
+        model = get_model_by_id(embedding_model_id, user_id)
         self.context['model_name'] = model.name
-        embedding_model = ModelManage.get_model(model_id, lambda _id: get_model(model))
+        embedding_model = ModelManage.get_model(embedding_model_id, lambda _id: get_model(model))
         embedding_value = embedding_model.embed_query(exec_problem_text)
         vector = VectorStore.get_embedding_vector()
         embedding_list = vector.query(exec_problem_text, embedding_value, dataset_id_list, exclude_document_id_list,
@@ -67,8 +81,28 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             return []
         paragraph_list = self.list_paragraph(embedding_list, vector)
         result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list]
+
+        
+        prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
+            'value')
+        exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
+        start_index = len(history_chat_record) - dialogue_number
+        history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
+                           for index in
+                           range(start_index if start_index > 0 else 0, len(history_chat_record))]
+        message_list = [*flat_map(history_message),
+                self.to_human_message(prompt, exec_problem_text, max_paragraph_char_number, result,
+                                      no_references_setting)]
         for paragraph in result:
             max_kb.info(f"search_dataset_step dataset_id:{paragraph.dataset_id} dataset_name:{paragraph.dataset_name} document_id:{paragraph.document_id} document_name:{paragraph.document_name} content:{paragraph.content}")
+        
+        chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None  
+        str = chat_model.invoke(message_list)
+        if "没有在知识库中查找到相关信息，建议咨询相关技术支持或参考官方文档进行操作" in str.content:
+            paragraph_list = None
+            return []
+
+
         return result
 
     @staticmethod
@@ -141,3 +175,30 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             'answer_tokens': 0,
             'cost': 0
         }
+    
+    @staticmethod
+    def to_human_message(prompt: str,
+                         problem: str,
+                         max_paragraph_char_number: int,
+                         paragraph_list: List[ParagraphPipelineModel],
+                         no_references_setting: Dict):
+        if paragraph_list is None or len(paragraph_list) == 0:
+            if no_references_setting.get('status') == 'ai_questioning':
+                return HumanMessage(
+                    content=no_references_setting.get('value').replace('{question}', problem))
+            else:
+                return HumanMessage(content=prompt.replace('{data}', "").replace('{question}', problem))
+        temp_data = ""
+        data_list = []
+        for p in paragraph_list:
+            # 排序。分数
+            content = f"{p.title}:{p.content}"
+            temp_data += content
+            if len(temp_data) > max_paragraph_char_number:
+                row_data = content[0:max_paragraph_char_number - len(temp_data)]
+                data_list.append(f"<data>{row_data}</data>")
+                break
+            else:
+                data_list.append(f"<data>{content}</data>")
+        data = "\n".join(data_list)
+        return HumanMessage(content=prompt.replace('{data}', data).replace('{question}', problem))    

@@ -16,6 +16,9 @@ from rest_framework import serializers
 from application.chat_pipeline.I_base_chat_pipeline import IBaseChatPipelineStep, ParagraphPipelineModel
 from application.chat_pipeline.pipeline_manage import PipelineManage
 from common.util.field_message import ErrMessage
+from application.models import ChatRecord
+from application.serializers.application_serializers import NoReferencesSetting
+from common.field.common import InstanceField
 
 
 class ISearchDatasetStep(IBaseChatPipelineStep):
@@ -44,19 +47,43 @@ class ISearchDatasetStep(IBaseChatPipelineStep):
                                       message="类型只支持register|reset_password", code=500)
         ], error_messages=ErrMessage.char("检索模式"))
         user_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("用户id"))
+        model_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("llm模型id"))
+        
+        
+        # 历史对答
+        history_chat_record = serializers.ListField(child=InstanceField(model_type=ChatRecord, required=True),
+                                                    error_messages=ErrMessage.list("历史对答"))
+        # 多轮对话数量
+        dialogue_number = serializers.IntegerField(required=True, error_messages=ErrMessage.integer("多轮对话数量"))
+        # 最大携带知识库段落长度
+        max_paragraph_char_number = serializers.IntegerField(required=True, error_messages=ErrMessage.integer(
+            "最大携带知识库段落长度"))
+        # 模板
+        prompt = serializers.CharField(required=True, error_messages=ErrMessage.char("提示词"))
+        # 补齐问题
+        padding_problem_text = serializers.CharField(required=False, error_messages=ErrMessage.char("补齐问题"))
+        # 未查询到引用分段
+        no_references_setting = NoReferencesSetting(required=True, error_messages=ErrMessage.base("无引用分段设置"))
 
     def get_step_serializer(self, manage: PipelineManage) -> Type[InstanceSerializer]:
         return self.InstanceSerializer
 
-    def _run(self, manage: PipelineManage):
+    def _run(self, manage: PipelineManage):     
         paragraph_list = self.execute(**self.context['step_args'])
         manage.context['paragraph_list'] = paragraph_list
         self.context['paragraph_list'] = paragraph_list
 
     @abstractmethod
     def execute(self, problem_text: str, dataset_id_list: list[str], exclude_document_id_list: list[str],
-                exclude_paragraph_id_list: list[str], top_n: int, similarity: float, padding_problem_text: str = None,
+                exclude_paragraph_id_list: list[str], top_n: int, similarity: float,
+                dialogue_number: int,
+                max_paragraph_char_number: int,
+                prompt: str,
+                history_chat_record: List[ChatRecord],
+                no_references_setting=None,
+                padding_problem_text: str = None,
                 search_mode: str = None,
+                model_id=None,
                 user_id=None,
                 **kwargs) -> List[ParagraphPipelineModel]:
         """

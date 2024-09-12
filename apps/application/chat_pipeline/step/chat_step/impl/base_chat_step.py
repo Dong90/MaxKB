@@ -40,7 +40,7 @@ def add_access_num(client_id=None, client_type=None):
             application_public_access_client.save()
 
 
-def write_context(step, manage, request_token, response_token, all_text):
+def write_context(step, manage, chat_model, request_token, response_token, all_text):
     step.context['message_tokens'] = request_token
     step.context['answer_tokens'] = response_token
     current_time = time.time()
@@ -49,6 +49,7 @@ def write_context(step, manage, request_token, response_token, all_text):
     manage.context['run_time'] = current_time - manage.context['start_time']
     manage.context['message_tokens'] = manage.context['message_tokens'] + request_token
     manage.context['answer_tokens'] = manage.context['answer_tokens'] + response_token
+    manage.context["chat_model"] = chat_model
 
 
 def event_content(response,
@@ -82,7 +83,7 @@ def event_content(response,
         else:
             request_token = 0
             response_token = 0
-        write_context(step, manage, request_token, response_token, all_text)
+        write_context(step, manage, chat_model, request_token, response_token, all_text)
         post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                       all_text, manage, step, padding_problem_text, client_id)
         yield 'data: ' + json.dumps({'chat_id': str(chat_id), 'id': str(chat_record_id), 'operate': True,
@@ -91,7 +92,7 @@ def event_content(response,
     except Exception as e:
         logging.getLogger("max_kb_error").error(f'{str(e)}:{traceback.format_exc()}')
         all_text = '异常' + str(e)
-        write_context(step, manage, 0, 0, all_text)
+        write_context(step, manage, chat_model, 0, 0, all_text)
         post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                       all_text, manage, step, padding_problem_text, client_id)
         add_access_num(client_id, client_type)
@@ -114,6 +115,15 @@ class BaseChatStep(IChatStep):
                 no_references_setting=None,
                 **kwargs):
         chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None
+
+        str = chat_model.invoke(message_list)
+        if "没有在知识库中查找到相关信息，建议咨询相关技术支持或参考官方文档进行操作" in str.content:
+             paragraph_list = []
+             message_list = []
+                #重新拼装已知信息
+            # return chat_model.stream(problem_text), True
+     
+        
         if stream:
             return self.execute_stream(message_list, chat_id, problem_text, post_response_handler, chat_model,
                                        paragraph_list,
@@ -165,6 +175,8 @@ class BaseChatStep(IChatStep):
             return iter([AIMessageChunk('抱歉，没有配置 AI 模型，无法优化引用分段，请先去应用中设置 AI 模型。')]), False
         else:
             return chat_model.stream(message_list), True
+                
+            
 
     def execute_stream(self, message_list: List[BaseMessage],
                        chat_id,
@@ -176,6 +188,7 @@ class BaseChatStep(IChatStep):
                        padding_problem_text: str = None,
                        client_id=None, client_type=None,
                        no_references_setting=None):
+    
         chat_result, is_ai_chat = self.get_stream_result(message_list, chat_model, paragraph_list,
                                                          no_references_setting, problem_text)
         chat_record_id = uuid.uuid1()

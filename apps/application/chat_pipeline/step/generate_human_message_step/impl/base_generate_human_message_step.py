@@ -16,6 +16,7 @@ from application.chat_pipeline.step.generate_human_message_step.i_generate_human
     IGenerateHumanMessageStep
 from application.models import ChatRecord
 from common.util.split_model import flat_map
+from setting.models_provider.tools import get_model_instance_by_model_user_id
 
 max_kb_error = logging.getLogger("max_kb_error")
 max_kb = logging.getLogger("max_kb")
