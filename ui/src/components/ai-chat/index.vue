@@ -414,6 +414,10 @@ const getWrite = (chat: any, reader: any, stream: boolean) => {
             if (content) {
               ChatManagement.append(chat.id, content)
             }
+            // 新增对 is_rag_used 字段的处理
+            if (chunk.is_rag_used !== undefined) {
+              chat.is_rag_used = chunk.is_rag_used
+            }
             if (chunk.is_end) {
               // 流处理成功 返回成功回调
               return Promise.resolve()
