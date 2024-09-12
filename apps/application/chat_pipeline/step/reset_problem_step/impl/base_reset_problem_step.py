@@ -22,7 +22,7 @@ max_kb_error = logging.getLogger("max_kb_error")
 max_kb = logging.getLogger("max_kb")
 
 prompt = (
-    '()里面是用户问题,根据上下文回答揣测用户问题({question}) 要求: 输出一个补全问题,并且放在<data></data>标签中')
+    '根据上下文:{context},回答揣测用户问题:{question} 要求: 输出一个补全问题,并且放在<data></data>标签中')
 
 class BaseResetProblemStep(IResetProblemStep):
     def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, chat_model: BaseChatModel = None,

@@ -114,16 +114,7 @@ class BaseChatStep(IChatStep):
                 client_id=None, client_type=None,
                 no_references_setting=None,
                 **kwargs):
-        chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None
-
-        str = chat_model.invoke(message_list)
-        if "没有在知识库中查找到相关信息，建议咨询相关技术支持或参考官方文档进行操作" in str.content:
-             paragraph_list = []
-             message_list = []
-                #重新拼装已知信息
-            # return chat_model.stream(problem_text), True
-     
-        
+        chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None       
         if stream:
             return self.execute_stream(message_list, chat_id, problem_text, post_response_handler, chat_model,
                                        paragraph_list,

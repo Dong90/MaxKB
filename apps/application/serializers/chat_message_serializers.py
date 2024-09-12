@@ -139,7 +139,9 @@ def get_post_handler(chat_info: ChatInfo):
                                      answer_tokens=manage.context['answer_tokens'],
                                      run_time=manage.context['run_time'],
                                      index=len(chat_info.chat_record_list) + 1)
+            chat_info.chat_model = manage.context['chat_model']
             chat_info.append_chat_record(chat_record, client_id)
+            
             # 重新设置缓存
             chat_cache.set(chat_id,
                            chat_info, timeout=60 * 30)
