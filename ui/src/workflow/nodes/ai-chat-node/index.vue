@@ -257,7 +257,7 @@ const form = {
   model_id: '',
   system: '',
   prompt: defaultPrompt,
-  dialogue_number: 1,
+  dialogue_number: 3,
   is_result: false,
   temperature: null,
   max_tokens: null

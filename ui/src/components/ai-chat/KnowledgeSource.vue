@@ -1,16 +1,16 @@
 <template>
-  <div class="flex align-center mt-16" v-if="!isWorkFlow(props.type)">
-    <span class="mr-4 color-secondary">知识来源</span>
-    <el-divider direction="vertical" />
-    <el-button type="primary" class="mr-8" link @click="openParagraph(data)">
-    <AppIcon iconName="app-reference-outlined" class="mr-4"></AppIcon>
-    引用分段 {{ data.paragraph_list?.length || 0 }}
-    </el-button>
+  <!-- <div class="flex align-center mt-16" v-if="!isWorkFlow(props.type)"> -->
+    <!-- <span class="mr-4 color-secondary">知识来源</span> -->
+    <!-- <el-divider direction="vertical" /> -->
+    <!-- <el-button type="primary" class="mr-8" link @click="openParagraph(data)"> -->
+    <!-- <AppIcon iconName="app-reference-outlined" class="mr-4"></AppIcon> -->
+    <!-- 引用分段 {{ data.paragraph_list?.length || 0 }} -->
+    <!-- </el-button> -->
     <!-- 添加是否使用 RAG 的字段 -->
-    <span v-if="data.is_rag_used" class="mr-4 color-secondary">使用 RAG</span>
-    <span v-else class="mr-4 color-secondary">未使用 RAG</span>
-  </div>
-  <div class="mt-8" v-if="!isWorkFlow(props.type)">
+    <!-- <span v-if="data.is_rag_used" class="mr-4 color-secondary">使用 RAG</span>
+    <span v-else class="mr-4 color-secondary">未使用 RAG</span> -->
+  <!-- </div> -->
+  <!-- <div class="mt-8" v-if="!isWorkFlow(props.type)">
     <el-space wrap>
       <el-button
         v-for="(dataset, index) in data.dataset_list"
@@ -21,7 +21,7 @@
         >{{ dataset.name }}</el-button
       >
     </el-space>
-  </div>
+  </div> -->
 
   <div class="border-t color-secondary flex-between mt-12" style="padding-top: 12px">
     <div>

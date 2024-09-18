@@ -82,27 +82,34 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         paragraph_list = self.list_paragraph(embedding_list, vector)
         result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list]
 
+        # prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
+        #     'value')
+        # exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
+        # start_index = len(history_chat_record) - 3
+        # history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
+        #                    for index in
+        #                    range(start_index if start_index > 0 else 0, len(history_chat_record))]
         
-        prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
-            'value')
-        exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
-        start_index = len(history_chat_record) - dialogue_number
-        history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
-                           for index in
-                           range(start_index if start_index > 0 else 0, len(history_chat_record))]
-        message_list = [*flat_map(history_message),
-                self.to_human_message(prompt, exec_problem_text, max_paragraph_char_number, result,
-                                      no_references_setting)]
-        for paragraph in result:
-            max_kb.info(f"search_dataset_step dataset_id:{paragraph.dataset_id} dataset_name:{paragraph.dataset_name} document_id:{paragraph.document_id} document_name:{paragraph.document_name} content:{paragraph.content}")
+        # contexts = [[history_chat_record[index].get_human_message().content]
+        #                    for index in
+        #                    range(start_index if start_index > 0 else 0, len(history_chat_record))]
         
-        chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None  
-        str = chat_model.invoke(message_list)
-        self.context["is_llm"] = False 
-        if "没有在知识库中查找到相关信息，建议咨询相关技术支持或参考官方文档进行操作" in str.content:
-            paragraph_list = None
-            self.context["is_llm"] = True
-            return []
+        # flat_list = [item for sublist in contexts for item in (sublist if isinstance(sublist, list) else [sublist])]
+        # history = ','.join(flat_list)
+                
+        # message_list = [*flat_map(history_message),
+        #         self.to_human_message(prompt, exec_problem_text, max_paragraph_char_number, history, result,
+        #                               no_references_setting)]
+        
+        # for paragraph in result:
+        #     max_kb.info(f"search_dataset_step dataset_id:{paragraph.dataset_id} dataset_name:{paragraph.dataset_name} document_id:{paragraph.document_id} document_name:{paragraph.document_name} content:{paragraph.content}")
+        
+        # chat_model = get_model_instance_by_model_user_id(model_id, user_id, **kwargs) if model_id is not None else None  
+        # str = chat_model.invoke(message_list)
+
+        # if "没有在知识库中查找到相关信息，建议咨询相关技术支持或参考官方文档进行操作" in str.content:
+        #     paragraph_list = None
+        #     return []
 
         return result
 
@@ -181,6 +188,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
     def to_human_message(prompt: str,
                          problem: str,
                          max_paragraph_char_number: int,
+                         history: str,
                          paragraph_list: List[ParagraphPipelineModel],
                          no_references_setting: Dict):
         if paragraph_list is None or len(paragraph_list) == 0:
@@ -190,7 +198,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             else:
                 return HumanMessage(content=prompt.replace('{data}', "").replace('{question}', problem))
         temp_data = ""
-        data_list = []
+        data_list = [history]
         for p in paragraph_list:
             # 排序。分数
             content = f"{p.title}:{p.content}"

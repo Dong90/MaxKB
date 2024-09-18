@@ -474,6 +474,7 @@ function chatMessage(chat?: any, problem?: string, re_chat?: boolean) {
       is_stop: false,
       record_id: '',
       vote_status: '-1',
+      dialogue_number: 3,
       status: undefined
     })
     chatList.value.push(chat)

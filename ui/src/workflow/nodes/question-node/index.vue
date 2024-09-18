@@ -226,7 +226,7 @@ const form = {
   model_id: '',
   system: '你是一个问题优化大师',
   prompt: defaultPrompt,
-  dialogue_number: 1,
+  dialogue_number: 3,
   is_result: false
 }
 

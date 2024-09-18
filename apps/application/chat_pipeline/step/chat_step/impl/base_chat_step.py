@@ -11,6 +11,7 @@ import logging
 import time
 import traceback
 import uuid
+import re
 from typing import List
 
 from django.db.models import QuerySet
@@ -64,13 +65,14 @@ def event_content(response,
                   problem_text: str,
                   padding_problem_text: str = None,
                   client_id=None, client_type=None,
-                  is_ai_chat: bool = None):
+                  is_ai_chat: bool = None,
+                  is_rag_used: bool = None):
     all_text = ''
     try:
         for chunk in response:
             all_text += chunk.content
             yield 'data: ' + json.dumps({'chat_id': str(chat_id), 'id': str(chat_record_id), 'operate': True,
-                                         'content': chunk.content, 'is_end': False}) + "\n\n"
+                                         'content': chunk.content, 'is_end': False, 'is_rag_used': is_rag_used}) + "\n\n"
 
         # 获取token
         if is_ai_chat:
@@ -168,8 +170,6 @@ class BaseChatStep(IChatStep):
         else:
             return chat_model.stream(message_list), True
                 
-            
-
     def execute_stream(self, message_list: List[BaseMessage],
                        chat_id,
                        problem_text,
@@ -182,12 +182,13 @@ class BaseChatStep(IChatStep):
                        no_references_setting=None):
     
         chat_result, is_ai_chat = self.get_stream_result(message_list, chat_model, paragraph_list,
-                                                         no_references_setting, problem_text,manage.context["is_llm"])
+                                                         no_references_setting, problem_text)
         chat_record_id = uuid.uuid1()
+        is_llm = True
         r = StreamingHttpResponse(
             streaming_content=event_content(chat_result, chat_id, chat_record_id, paragraph_list,
                                             post_response_handler, manage, self, chat_model, message_list, problem_text,
-                                            padding_problem_text, client_id, client_type, is_ai_chat),
+                                            padding_problem_text, client_id, client_type, is_ai_chat, is_llm),
             content_type='text/event-stream;charset=utf-8')
 
         r['Cache-Control'] = 'no-cache'
@@ -212,7 +213,7 @@ class BaseChatStep(IChatStep):
             return AIMessage(no_references_setting.get('value').replace('{question}', problem_text)), False
         if chat_model is None:
             return AIMessage('抱歉，没有配置 AI 模型，无法优化引用分段，请先去应用中设置 AI 模型。'), False
-        else:
+        else:          
             return chat_model.invoke(message_list), True
 
     def execute_block(self, message_list: List[BaseMessage],
