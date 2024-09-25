@@ -97,8 +97,11 @@ class BaseVectorStore(ABC):
             :return: bool
             """
             self.save_pre_handler()
-            chunk_list = chunk_data_list(data_list)
-            result = sub_array(chunk_list)
+            print(data_list)
+            # chunk_list = chunk_data_list(data_list)
+            # result = sub_array(chunk_list)
+            result=[data_list]
+            # print(result)
             for child_array in result:
                 if is_save_function():
                     self._batch_save(child_array, embedding, is_save_function)

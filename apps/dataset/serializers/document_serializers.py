@@ -670,7 +670,13 @@ class DocumentSerializers(ApiMixin, serializers.Serializer):
             def handler(source_url: str, selector, response: Fork.Response):
                 if response.status == 200:
                     try:
-                        paragraphs = get_split_model('web.md').parse(response.content)
+                        # paragraphs = get_split_model('web.md').parse(response.content)
+                        text = response.content
+                        text = text.replace('\r\n', '\n')
+                        text = text.replace('\r', '\n')
+                        text = text.replace("\0", '')
+                        paragraphs = [{'title': 'a', 'content': text}]
+
                         # 插入
                         DocumentSerializers.Create(data={'dataset_id': dataset_id}).save(
                             {'name': source_url[0:128], 'paragraphs': paragraphs,
