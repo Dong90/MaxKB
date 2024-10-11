@@ -236,7 +236,7 @@ class BaseChatStep(IChatStep):
             else:
                 request_token = 0
                 response_token = 0
-            write_context(self, manage, request_token, response_token, chat_result.content)
+            write_context(self, manage, chat_model, request_token, response_token, chat_result.content)
             post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                           chat_result.content, manage, self, padding_problem_text, client_id)
             add_access_num(client_id, client_type)
@@ -244,7 +244,7 @@ class BaseChatStep(IChatStep):
                                    'content': chat_result.content, 'is_end': True})
         except Exception as e:
             all_text = '异常' + str(e)
-            write_context(self, manage, 0, 0, all_text)
+            write_context(self, manage, chat_model, 0, 0, all_text)
             post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                           all_text, manage, self, padding_problem_text, client_id)
             add_access_num(client_id, client_type)

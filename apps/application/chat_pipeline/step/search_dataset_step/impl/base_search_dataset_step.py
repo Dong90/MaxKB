@@ -79,8 +79,17 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
                                       exclude_paragraph_id_list, True, top_n, similarity, SearchMode(search_mode))
         if embedding_list is None:
             return []
-        paragraph_list = self.list_paragraph(embedding_list, vector)
-        result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list]
+        # PG查询出来的结果是dict，得转成对象兼容es和milvus
+        class EmbeddingResult:
+             def __init__(self, **kwargs):
+                 for key, value in kwargs.items():
+                    setattr(self, key, value)
+        result_objects = []
+        for item in embedding_list:
+            if isinstance(item, dict):
+                result_objects.append(EmbeddingResult(**item))
+        paragraph_list = self.list_paragraph(result_objects, vector)
+        result = [self.reset_paragraph(paragraph, result_objects) for paragraph in paragraph_list]
 
         # prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
         #     'value')
@@ -124,8 +133,8 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             #TODO 这里的comprehensive_score 应该是相似度的分数，但是现在没有找到合适的计算方式，先用相似度代替
             return (ParagraphPipelineModel.builder()
                     .add_paragraph(paragraph)
-                    .add_similarity(find_embedding.meta.get('comprehensive_score'))
-                    .add_comprehensive_score(find_embedding.meta.get('comprehensive_score'))
+                    .add_similarity(find_embedding.comprehensive_score)
+                    .add_comprehensive_score(find_embedding.comprehensive_score)
                     .add_dataset_name(paragraph.get('dataset_name'))
                     .add_document_name(paragraph.get('document_name'))
                     .add_hit_handling_method(paragraph.get('hit_handling_method'))

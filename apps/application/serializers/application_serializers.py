@@ -448,8 +448,8 @@ class ApplicationSerializer(serializers.Serializer):
                                        self.data.get('similarity'),
                                        SearchMode(self.data.get('search_mode')),
                                        model)
-            hit_dict = reduce(lambda x, y: {**x, **y}, [{hit.paragraph_id: hit} for hit in hit_list], {})
-            p_list = list_paragraph([h.paragraph_id for h in hit_list])
+            hit_dict = reduce(lambda x, y: {**x, **y}, [{hit.get('paragraph_id') : hit} for hit in hit_list], {})
+            p_list = list_paragraph([h.get('paragraph_id')  for h in hit_list])
             # test = hit_dict.get(p_list[0].get('id')).
             # return [{**p, 'similarity': hit_dict.get('id').meta.get('similarity'),
             #          'comprehensive_score': hit_dict.get(p.get('id')).meta.get('comprehensive_score')} for p in p_list]
