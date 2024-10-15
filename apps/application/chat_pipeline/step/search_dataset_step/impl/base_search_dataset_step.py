@@ -27,6 +27,7 @@ from smartdoc.conf import PROJECT_DIR
 from setting.models_provider.tools import get_model_instance_by_model_user_id
 from application.models import ChatRecord
 from common.util.split_model import flat_map
+from FlagEmbedding import FlagReranker
 
 max_kb_error = logging.getLogger("max_kb_error")
 max_kb = logging.getLogger("max_kb")
@@ -89,7 +90,22 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             if isinstance(item, dict):
                 result_objects.append(EmbeddingResult(**item))
         paragraph_list = self.list_paragraph(result_objects, vector)
-        result = [self.reset_paragraph(paragraph, result_objects) for paragraph in paragraph_list]
+        
+        reranker = FlagReranker('BAAI/bge-reranker-v2-m3', use_fp16=True) 
+        # 准备问题和查询文档对
+        queries = [problem_text] * len(paragraph_list)
+        candidates = [hit['content'] for hit in paragraph_list]
+            
+        # 计算重排得分
+        scores = reranker.compute_score(list(zip(queries, candidates)), normalize=True)
+        
+        for i, hit in enumerate(paragraph_list):
+            hit['score'] = scores[i]
+        
+        # 重排后进行排序
+        paragraph_list = sorted(paragraph_list, key=lambda p: p['score'], reverse=True)
+        
+        result = [self.reset_paragraph(paragraph, result_objects) for paragraph in paragraph_list if paragraph['score'] > similarity]
 
         # prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
         #     'value')
@@ -133,8 +149,8 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             #TODO 这里的comprehensive_score 应该是相似度的分数，但是现在没有找到合适的计算方式，先用相似度代替
             return (ParagraphPipelineModel.builder()
                     .add_paragraph(paragraph)
-                    .add_similarity(find_embedding.comprehensive_score)
-                    .add_comprehensive_score(find_embedding.comprehensive_score)
+                    .add_similarity(paragraph['score'])
+                    .add_comprehensive_score(paragraph['score'])
                     .add_dataset_name(paragraph.get('dataset_name'))
                     .add_document_name(paragraph.get('document_name'))
                     .add_hit_handling_method(paragraph.get('hit_handling_method'))
@@ -173,9 +189,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
                                              paragraph, embedding_list) >= paragraph.get(
                                              'directly_return_similarity'))]
         if len(hit_handling_method_paragraph) > 0:
-            # 找到评分最高的
-            return [sorted(hit_handling_method_paragraph,
-                           key=lambda p: BaseSearchDatasetStep.get_similarity(p, embedding_list))[-1]]
+            return hit_handling_method_paragraph
         return paragraph_list
 
     def get_details(self, manage, **kwargs):

@@ -41,22 +41,23 @@ class ModelManage:
 class VectorStore:
     from embedding.vector.pg_vector import PGVector
     from embedding.vector.base_vector import BaseVectorStore
+    from embedding.vector.es_kb_service import ESVector
+    from embedding.vector.es_kb_service import ElasticSearchVectorFactory
+    from embedding.vector.milvus_kb_service import MilvusVector
+    from embedding.vector.milvus_kb_service import MilvusVectorFactory
     instance_map = {
         'pg_vector': PGVector,
+        'elastic_search': ElasticSearchVectorFactory.init_vector([]),
+        'milvus': MilvusVectorFactory.init_vector([])
     }
     instance = None
 
     @staticmethod
-    def get_embedding_vector() -> BaseVectorStore:
+    def get_embedding_vector(vector_store_name: str = "pg_vector") -> BaseVectorStore:
         from embedding.vector.pg_vector import PGVector
-        from embedding.vector.es_kb_service import ESVector
-        from embedding.vector.es_kb_service import ElasticSearchVectorFactory
-        # from embedding.vector.milvus_kb_service import MilvusVector
-        # from embedding.vector.milvus_kb_service import MilvusVectorFactory
+      
         if VectorStore.instance is None:
-            from smartdoc.const import CONFIG
-            vector_store_class = VectorStore.instance_map.get(CONFIG.get("VECTOR_STORE_NAME"),
-                                                              PGVector)
+            vector_store_class = VectorStore.instance_map.get(vector_store_name,PGVector)
             VectorStore.instance = vector_store_class()
             # es_vector = ElasticSearchVectorFactory.init_vector([])
             # VectorStore.instance = es_vector
