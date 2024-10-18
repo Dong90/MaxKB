@@ -70,12 +70,13 @@ class Fork:
 
     def __init__(self, base_fork_url: str, selector_list: List[str]):
         base_fork_url = remove_fragment(base_fork_url)
-        self.base_fork_url = urljoin(base_fork_url if base_fork_url.endswith("/") else base_fork_url + '/', '.')
-        parsed = urlsplit(base_fork_url)
-        query = parsed.query
-        self.base_fork_url = self.base_fork_url[:-1]
-        if query is not None and len(query) > 0:
-            self.base_fork_url = self.base_fork_url + '?' + query
+        self.base_fork_url = base_fork_url
+        # self.base_fork_url = urljoin(base_fork_url if base_fork_url.endswith("/") else base_fork_url + '/', '.')
+        # parsed = urlsplit(base_fork_url)
+        # query = parsed.query
+        # self.base_fork_url = self.base_fork_url[:-1]
+        # if query is not None and len(query) > 0:
+        #     self.base_fork_url = self.base_fork_url + '?' + query
         self.selector_list = [selector for selector in selector_list if selector is not None and len(selector) > 0]
         self.urlparse = urlparse(self.base_fork_url)
         self.base_url = ParseResult(scheme=self.urlparse.scheme, netloc=self.urlparse.netloc, path='', params='',
@@ -85,9 +86,27 @@ class Fork:
     def get_child_link_list(self, bf: BeautifulSoup):
         pattern = "^((?!(http:|https:|tel:/|#|mailto:|javascript:))|" + self.base_fork_url + "|/).*"
         link_list = bf.find_all(name='a', href=re.compile(pattern))
+        
+        if self.base_fork_url.startswith('https://developer.qiniu.com/faq'):
+            # 由于faq页面有些文档的url它并不是以faq往下走的，所以需要额外添加匹配条件
+            deep_path_pattern = re.escape(self.base_url) + r"/[^/]+/[^/]+.*"
+            # 每一页的URL也得匹配进去
+            page_path_pattern = re.escape(self.base_url) + r"/faq\?page"
+                
+            combined_pattern = f"({deep_path_pattern})|({page_path_pattern})"
+            # 排除内容为“阅读全文”的 <a> 标签
+            exclude_text = "阅读全文"
+            
+            # 执行查找
+            link_list += bf.find_all(
+                name='a',
+                href=re.compile(combined_pattern),
+                string=lambda text: text is None or exclude_text not in text
+            )
+        
         result = [ChildLink(link.get('href'), link) if link.get('href').startswith(self.base_url) else ChildLink(
             self.base_url + link.get('href'), link) for link in link_list]
-        result = [row for row in result if row.url.startswith(self.base_fork_url)]
+        result = [row for row in result if row.url.startswith('https://developer.qiniu.com') or row.url.startswith(self.base_fork_url)]
         return result
 
     def get_content_html(self, bf: BeautifulSoup):
