@@ -183,8 +183,9 @@ class ListenerManagement:
                 select_string=get_file_content(
                     os.path.join(PROJECT_DIR, "apps", "common", 'sql', 'list_embedding_text.sql')))
             # 删除文档向量数据
+            # VectorStore.get_embedding_vector('es_vector').delete_by_document_id(document_id)
             VectorStore.get_embedding_vector().delete_by_document_id(document_id)
-
+            
             def is_save_function():
                 return QuerySet(Document).filter(id=document_id).exists()
 

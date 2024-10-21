@@ -198,7 +198,6 @@ class ChatMessageSerializer(serializers.Serializer):
         client_type = self.data.get('client_type')
         pipeline_manage_builder = PipelineManage.builder()
         # 如果开启了问题优化,则添加上问题优化步骤
-        chat_info.application.problem_optimization = False
         if chat_info.application.problem_optimization:
             pipeline_manage_builder.append_step(BaseResetProblemStep)
         # 构建流水线管理器

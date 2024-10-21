@@ -48,12 +48,11 @@ class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
                 padding_problem_text: str = None,
                 no_references_setting=None,
                 **kwargs) -> List[BaseMessage]:
-        prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
-            'value')
+        # prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
+        #     'value')
         exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
-        dialogue_number = 3
+        # dialogue_number = 3
         start_index = len(history_chat_record) - dialogue_number
-        # , history_chat_record[index].get_ai_message()
         history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
                            for index in
                            range(start_index if start_index > 0 else 0, len(history_chat_record))]
@@ -64,9 +63,9 @@ class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
         if len(message_list) > 0:
             contexts = ','.join([item.content for item in message_list[:-1]])
             match = re.search(r"<data>(.*?)</data>", message_list[-1].content, re.DOTALL)
-            if match:
-               result = contexts + match.group(1).strip()
-               message_list[-1].content = prompt.format(**{'data': result,'question': problem_text})
+            # if match:
+            #    result = contexts + match.group(1).strip()
+            #    message_list[-1].content = prompt.format(**{'data': result,'question': problem_text})
         
         for message in message_list:
             if len(message.content) != 0:
@@ -81,11 +80,11 @@ class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
                          paragraph_list: List[ParagraphPipelineModel],
                          no_references_setting: Dict):
         if paragraph_list is None or len(paragraph_list) == 0:
-            if no_references_setting.get('status') == 'ai_questioning':
-                return HumanMessage(
-                    content=no_references_setting.get('value').replace('{question}', problem))
-            else:
-                return HumanMessage(content=prompt.replace('{data}', "").replace('{question}', problem))
+            # if no_references_setting.get('status') == 'ai_questioning':
+            #     return HumanMessage(
+            #         content=no_references_setting.get('value').replace('{question}', problem))
+            # else:
+            return HumanMessage(content=prompt.replace('{data}', "").replace('{question}', problem))
         temp_data = ""
         data_list = []
         for p in paragraph_list:

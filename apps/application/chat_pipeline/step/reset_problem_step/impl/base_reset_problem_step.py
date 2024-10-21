@@ -22,29 +22,24 @@ max_kb_error = logging.getLogger("max_kb_error")
 max_kb = logging.getLogger("max_kb")
 
 prompt = (
-    '根据上下文:{context},回答用户问题:{question} 要求: 输出一个补全问题,并且放在<data></data>标签中')
+    '上下文对话内容:{context},问题:{question} 要求: 首先判断问题与上下文对话内容的关系：若问题与上下文的内容连贯，则理解上下文对话内容，在其基础上全面总结真正的问题，以客户的角度输出问题，主语是\'我\',不要输出推理过程；若当前问题突然转变话题，则将该对话视为客户问题，不要推理不要猜测，不要附带前面的对话内容，只输出问题。输出格式：输出问题并且放在<data></data>标签中')
 
 class BaseResetProblemStep(IResetProblemStep):
     def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, chat_model: BaseChatModel = None,
                 **kwargs) -> str:
-        # chat_model = get_model_instance_by_model_user_id(str(self.context['model_id']), str(self.context['user_id']), **kwargs)
+        chat_model = get_model_instance_by_model_user_id(str(self.context['model_id']), str(self.context['user_id']), **kwargs)
         if chat_model is None:
             self.context['message_tokens'] = 0
             self.context['answer_tokens'] = 0
             return problem_text
         start_index = len(history_chat_record) - 3
-        # , history_chat_record[index].get_ai_message()
-        history_message = [[history_chat_record[index].get_human_message()]
-                           for index in
-                           range(start_index if start_index > 0 else 0, len(history_chat_record))]
-        
-        contexts = [[history_chat_record[index].get_human_message().content]
+     
+        contexts = [[history_chat_record[index].get_human_message().content, history_chat_record[index].get_ai_message().content]
                            for index in
                            range(start_index if start_index > 0 else 0, len(history_chat_record))]
         
         flat_list = [item for sublist in contexts for item in (sublist if isinstance(sublist, list) else [sublist])]
-        result = ','.join(flat_list)
-        message_list = [*flat_map(history_message), HumanMessage(content=prompt.format(**{'context': result,'question': problem_text}))]
+        message_list = [HumanMessage(content=prompt.format(**{'context': flat_list,'question': problem_text}))]
         response = chat_model.invoke(message_list) 
         
         padding_problem = problem_text

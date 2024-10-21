@@ -183,9 +183,6 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         ]
         if filter_embedding_list is not None and len(filter_embedding_list) > 0:
             find_embedding = filter_embedding_list[-1]
-            # find_embedding.get('similarity')
-            # find_embedding.get('comprehensive_score')
-            # TODO 这里的comprehensive_score 应该是相似度的分数，但是现在没有找到合适的计算方式，先用相似度代替
             return (
                 ParagraphPipelineModel.builder()
                 .add_paragraph(paragraph)
