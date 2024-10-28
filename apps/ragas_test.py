@@ -1,24 +1,24 @@
+from dataclasses import field
+
 import pandas as pd
 import requests
-import ast
-import json
 from datasets import Dataset
-from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from ragas.llms import LangchainLLMWrapper
 from ragas import evaluate, adapt
+
 from ragas.metrics import (
     faithfulness,
     answer_relevancy,
     context_recall,
     # context_relevance,
 )
+
 def get_chat_record(application_id, chat_id, record_id):
     url = f'http://183.131.7.9:8003/api/application/{application_id}/chat/{chat_id}/chat_record/{record_id}'
 
     headers = {
-        'AUTHORIZATION': 'eyJ1c2VybmFtZSI6ImFkbWluIiwiaWQiOiJmMGRkOGY3MS1lNGVlLTExZWUtOGM4NC1hOGExNTk1ODAxYWIiLCJlbWFpbCI6IiIsInR5cGUiOiJVU0VSIn0:1szBEw:_aORb6WmKRYem8mpJnX2ajOo39G_FVog4RxSc-VMEP8',
+        'AUTHORIZATION': 'eyJ1c2VybmFtZSI6ImFkbWluIiwiaWQiOiJmMGRkOGY3MS1lNGVlLTExZWUtOGM4NC1hOGExNTk1ODAxYWIiLCJlbWFpbCI6IiIsInR5cGUiOiJVU0VSIn0:1t5FGJ:Sd3LF1spf6Pu9Rhmq8VF1rdu9YMepOXHSmSmQ-84rfM',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9',
         'Connection': 'keep-alive',
@@ -30,7 +30,7 @@ def get_chat_record(application_id, chat_id, record_id):
 def send_chat_message(message, chat_uuid):
     url = f'http://183.131.7.9:8003/api/application/chat_message/{chat_uuid}'
     headers = {
-        'AUTHORIZATION': 'eyJ1c2VybmFtZSI6ImFkbWluIiwiaWQiOiJmMGRkOGY3MS1lNGVlLTExZWUtOGM4NC1hOGExNTk1ODAxYWIiLCJlbWFpbCI6IiIsInR5cGUiOiJVU0VSIn0:1szBEw:_aORb6WmKRYem8mpJnX2ajOo39G_FVog4RxSc-VMEP8',
+        'AUTHORIZATION': 'eyJ1c2VybmFtZSI6ImFkbWluIiwiaWQiOiJmMGRkOGY3MS1lNGVlLTExZWUtOGM4NC1hOGExNTk1ODAxYWIiLCJlbWFpbCI6IiIsInR5cGUiOiJVU0VSIn0:1t5FGJ:Sd3LF1spf6Pu9Rhmq8VF1rdu9YMepOXHSmSmQ-84rfM',
         'Accept': '*/*',
         'Accept-Language': 'zh-CN,zh;q=0.9',
         'Connection': 'keep-alive',
@@ -160,15 +160,15 @@ ground_truths = ['要配置域名的 CNAME，您需要按照以下步骤操作�
 '保存更改：确认保存您的设置，这样您的 CNAME 记录就会被添加。'
 '等待生效：DNS 记录的更改可能需要一些时间才能生效，通常在几分钟到48小时之间。'
 '完成以上步骤后，您的域名请求就会指向七牛云 CDN，从而享受CDN加速效果。',
-'要购买 SSL 证书，您可以按照以下步骤操作：',
-'功能很多',
-'七牛云存储是一个云存储服务，它提供了各种功能，如文件上传、下载、删除、文件元数据管理、文件访问控制等。',
-'上传文件',
+# '要购买 SSL 证书，您可以按照以下步骤操作：',
+# '功能很多',
+# '七牛云存储是一个云存储服务，它提供了各种功能，如文件上传、下载、删除、文件元数据管理、文件访问控制等。',
+# '上传文件',
 ]
 
 # 调接口
 application_id = 'cef470c6-603b-11ef-87f1-26cf8447a8c9'
-chat_id = 'e3b31394-87ac-11ef-9d0f-26cf8447a8c9'
+chat_id = 'e7fbcefa-94e0-11ef-a9d2-26cf8447a8c9'
 
 for question in questions:
     record_id =  ask_question(question, chat_id)
@@ -185,9 +185,6 @@ data_samples = {
 }
 
 dataset = Dataset.from_dict(data_samples)
-print(faithfulness.statement_prompt.to_string())
-adapt(metrics=[faithfulness, answer_relevancy], language="chinese", llm=llm, cache_dir='.\\ragas\\cache\\')
-print(faithfulness.statement_prompt.to_string())
 
 # 进行评估
 result = evaluate(dataset, metrics=[
@@ -216,7 +213,7 @@ pd.set_option('display.max_colwidth', None)  # 显示完整列内容
 
 # 打印结果
 # print(df_selected)
-df.to_excel('new_ragas_result.xlsx', index=False)
+df.to_excel('pg_ragas_result3.xlsx', index=False)
 
 
 

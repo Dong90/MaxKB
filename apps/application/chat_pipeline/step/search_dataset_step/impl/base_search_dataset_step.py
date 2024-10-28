@@ -121,20 +121,20 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         
         if len(paragraph_list) == 0:
             return []
-        reranker = FlagReranker("BAAI/bge-reranker-v2-m3", use_fp16=True)
-        # 准备问题和查询文档对
-        queries = [problem_text] * len(paragraph_list)
+       # 创建单例重排模型实例
+        singleton_reranker = SingletonFlagReranker()
+
+        queries = [exec_problem_text] * len(paragraph_list)
         candidates = [hit["content"] for hit in paragraph_list]
 
         # 计算重排得分
-        scores = reranker.compute_score(list(zip(queries, candidates)), normalize=True)
+        scores = singleton_reranker.compute_score(list(zip(queries, candidates)), normalize=True)
 
         for i, hit in enumerate(paragraph_list):
             hit["score"] = scores[i]
 
         # 重排后进行排序
         paragraph_list = sorted(paragraph_list, key=lambda p: p["score"], reverse=True)
-
         result = [
             self.reset_paragraph(paragraph, embedding_list)
             for paragraph in paragraph_list
@@ -301,3 +301,15 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         return HumanMessage(
             content=prompt.replace("{data}", data).replace("{question}", problem)
         )
+
+class SingletonFlagReranker:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(SingletonFlagReranker, cls).__new__(cls)
+            cls._instance.reranker = FlagReranker("BAAI/bge-reranker-v2-m3", use_fp16=True)
+        return cls._instance
+
+    def compute_score(self, pairs, normalize=False):
+        return self.reranker.compute_score(pairs, normalize=normalize)
