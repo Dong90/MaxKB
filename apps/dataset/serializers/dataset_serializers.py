@@ -14,17 +14,18 @@ import uuid
 from functools import reduce
 from typing import Dict, List
 from urllib.parse import urlparse
-
 from django.contrib.postgres.fields import ArrayField
 from django.core import validators
 from django.db import transaction, models
 from django.db.models import QuerySet
 from django.http import HttpResponse
 from drf_yasg import openapi
+import numpy as np
 from rest_framework import serializers
-
+from langchain_openai.embeddings import OpenAIEmbeddings
 from application.models import ApplicationDatasetMapping
-from common.config.embedding_config import VectorStore
+from apps.setting.models_provider import get_model
+from common.config.embedding_config import ModelManage, VectorStore
 from common.db.search import get_dynamics_model, native_page_search, native_search
 from common.db.sql_execute import select_list
 from common.event import ListenerManagement, SyncWebDatasetArgs
@@ -40,6 +41,7 @@ from dataset.serializers.common_serializers import list_paragraph, MetaSerialize
     get_embedding_model_by_dataset_id
 from dataset.serializers.document_serializers import DocumentSerializers, DocumentInstanceSerializer
 from embedding.models import SearchMode
+from apps.dataset.split import SplitStrategyFactory
 from setting.models import AuthOperate
 from smartdoc.conf import PROJECT_DIR
 
@@ -470,7 +472,7 @@ class DataSetSerializers(serializers.ModelSerializer):
                    'type': Type.web,
                    'embedding_mode_id': instance.get('embedding_mode_id'),
                    'meta': {'source_url': instance.get('source_url'), 'selector': instance.get('selector'),
-                            'embedding_mode_id': instance.get('embedding_mode_id')}})
+                            'embedding_mode_id': instance.get('embedding_mode_id'),'split_method': instance.get('split_method')}})
             dataset.save()
             ListenerManagement.sync_web_dataset_signal.send(
                 SyncWebDatasetArgs(str(dataset_id), instance.get('source_url'), instance.get('selector'),
@@ -624,12 +626,9 @@ class DataSetSerializers(serializers.ModelSerializer):
                     try:
                         document_name = child_link.tag.text if child_link.tag is not None and len(
                             child_link.tag.text.strip()) > 0 else child_link.url
-                        # paragraphs = get_split_model('web.md').parse(response.content)
-                        text = response.content
-                        text = text.replace('\r\n', '\n')
-                        text = text.replace('\r', '\n')
-                        text = text.replace("\0", '')
-                        paragraphs = [{'title':'a','content':text}]
+                        strategy = SplitStrategyFactory.get_strategy(dataset.meta.get('split_method'))
+                        paragraphs = strategy.split(response.content)
+
                         first = QuerySet(Document).filter(meta__source_url=child_link.url, dataset=dataset).first()
                         if first is not None:
                             # 如果存在,使用文档同步

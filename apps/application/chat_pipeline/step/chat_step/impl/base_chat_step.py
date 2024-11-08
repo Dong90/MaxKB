@@ -68,11 +68,33 @@ def event_content(response,
                   is_ai_chat: bool = None,
                   is_rag_used: bool = None):
     all_text = ''
+    start_time = time.time()  # 记录调用时间
+    first_chunk_yielded = False
+
     try:
         for chunk in response:
             all_text += chunk.content
-            yield 'data: ' + json.dumps({'chat_id': str(chat_id), 'id': str(chat_record_id), 'operate': True,
-                                         'content': chunk.content, 'is_end': False, 'is_rag_used': is_rag_used}) + "\n\n"
+            if not first_chunk_yielded:
+                ttft = time.time() - start_time  # 计算 TTFT
+                yield 'data: ' + json.dumps({
+                    'chat_id': str(chat_id),
+                    'id': str(chat_record_id),
+                    'operate': True,
+                    'content': chunk.content,
+                    'is_end': False,
+                    'is_rag_used': is_rag_used,
+                    'ttft': ttft  # 包含 TTFT
+                }) + "\n\n"
+                first_chunk_yielded = True
+            else:
+                yield 'data: ' + json.dumps({
+                    'chat_id': str(chat_id),
+                    'id': str(chat_record_id),
+                    'operate': True,
+                    'content': chunk.content,
+                    'is_end': False,
+                    'is_rag_used': is_rag_used
+                }) + "\n\n"
 
         # 获取token
         if is_ai_chat:
@@ -236,7 +258,7 @@ class BaseChatStep(IChatStep):
             else:
                 request_token = 0
                 response_token = 0
-            write_context(self, manage, request_token, response_token, chat_result.content)
+            write_context(self, manage, chat_model, request_token, response_token, chat_result.content)
             post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                           chat_result.content, manage, self, padding_problem_text, client_id)
             add_access_num(client_id, client_type)
@@ -244,7 +266,7 @@ class BaseChatStep(IChatStep):
                                    'content': chat_result.content, 'is_end': True})
         except Exception as e:
             all_text = '异常' + str(e)
-            write_context(self, manage, 0, 0, all_text)
+            write_context(self, manage, chat_model, 0, 0, all_text)
             post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                           all_text, manage, self, padding_problem_text, client_id)
             add_access_num(client_id, client_type)

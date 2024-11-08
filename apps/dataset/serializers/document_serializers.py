@@ -23,6 +23,9 @@ from drf_yasg import openapi
 from rest_framework import serializers
 from xlwt import Utils
 
+from apps.common.config.embedding_config import ModelManage
+from apps.setting.models_provider import get_model
+import numpy as np
 from common.db.search import native_search, native_page_search
 from common.event.common import work_thread_pool
 from common.event.listener_manage import ListenerManagement, SyncWebDocumentArgs, UpdateEmbeddingDatasetIdArgs
@@ -44,6 +47,7 @@ from dataset.models.data_set import DataSet, Document, Paragraph, Problem, Type,
 from dataset.serializers.common_serializers import BatchSerializer, MetaSerializer, ProblemParagraphManage, \
     get_embedding_model_by_dataset_id
 from dataset.serializers.paragraph_serializers import ParagraphSerializers, ParagraphInstanceSerializer
+from apps.dataset.split import SplitStrategyFactory
 from smartdoc.conf import PROJECT_DIR
 
 parse_qa_handle_list = [XlsParseQAHandle(), CsvParseQAHandle(), XlsxParseQAHandle()]
@@ -670,13 +674,9 @@ class DocumentSerializers(ApiMixin, serializers.Serializer):
             def handler(source_url: str, selector, response: Fork.Response):
                 if response.status == 200:
                     try:
-                        # paragraphs = get_split_model('web.md').parse(response.content)
-                        text = response.content
-                        text = text.replace('\r\n', '\n')
-                        text = text.replace('\r', '\n')
-                        text = text.replace("\0", '')
-                        paragraphs = [{'title': 'a', 'content': text}]
-
+                        dataset = QuerySet(DataSet).get(id=dataset_id)
+                        strategy = SplitStrategyFactory.get_strategy(dataset.meta.get('split_method'))
+                        paragraphs = strategy.split(response.content)
                         # 插入
                         DocumentSerializers.Create(data={'dataset_id': dataset_id}).save(
                             {'name': source_url[0:128], 'paragraphs': paragraphs,
@@ -942,3 +942,4 @@ def file_to_paragraph(file, pattern_list: List, with_filter: bool, limit: int):
         if split_handle.support(file, get_buffer):
             return split_handle.handle(file, pattern_list, with_filter, limit, get_buffer, save_image)
     return default_split_handle.handle(file, pattern_list, with_filter, limit, get_buffer, save_image)
+
