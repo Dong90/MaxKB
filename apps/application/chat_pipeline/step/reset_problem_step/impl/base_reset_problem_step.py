@@ -22,8 +22,10 @@ max_kb_error = logging.getLogger("max_kb_error")
 max_kb = logging.getLogger("max_kb")
 
 prompt = (
-    '上下文对话内容:{context},问题:{question} 要求: 首先判断问题与上下文对话内容的关系：若问题与上下文的内容连贯，则理解上下文对话内容，在其基础上全面总结真正的问题，以客户的角度输出问题，主语是\'我\',不要输出推理过程；若当前问题突然转变话题，则将该对话视为客户问题，不要推理不要猜测，不要附带前面的对话内容，只输出问题。输出格式：输出问题并且放在<data></data>标签中')
+    '上下文对话内容:{context},问题:{question} 要求: 首先判断问题与上下文对话内容的关系：若问题与上下文的内容连贯，关联度高则理解上下文对话内容，在其基础上全面总结真正的问题，以客户的角度输出问题，主语是\'我\',不要输出推理过程；若当前问题突然转变话题，与上下文无关，则将该对话视为客户问题，不要推理不要猜测，不要附带前面的对话内容，只输出问题。输出格式：输出问题并且放在<data></data>标签中')
 
+# prompt = (
+#     '历史问题:{context},当前问题:{question} 要求: 首先判断当前问题与历史问题的关系：若逻辑连贯，则理解历史和当前问题的内容，在其基础上全面总结真正的问题，以客户的角度输出问题，主语是\'我\',不要输出推理过程；若当前问题突然转变话题，与历史问题无关，则将该问题视为客户问题，不要推理不要猜测，不要附带历史问题，只输出当前问题。输出格式：输出问题并且放在<data></data>标签中')
 class BaseResetProblemStep(IResetProblemStep):
     def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, chat_model: BaseChatModel = None,
                 **kwargs) -> str:

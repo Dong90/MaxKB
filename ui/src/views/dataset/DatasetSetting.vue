@@ -51,6 +51,22 @@
                 @blur="form.selector = form.selector.trim()"
               />
             </el-form-item>
+            <el-form-item label="切片方式" prop="split_method">
+              <el-select
+                v-model="form.split_method"
+                placeholder="请选择切片方式"
+                class="w-full"
+                popper-class="select-slicing-method"
+                :clearable="true"
+              >
+                <el-option
+                  v-for="option in slicingMethodOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
+            </el-form-item>
           </el-form>
           <div v-if="application_id_list.length > 0">
             <h4 class="title-decoration-1 mb-16">关联应用</h4>
@@ -124,12 +140,19 @@ const cloneModelId = ref('')
 
 const form = ref<any>({
   source_url: '',
-  selector: ''
+  selector: '',
+  split_method: '' // 初始化切片方式字段
 })
 
 const rules = reactive({
   source_url: [{ required: true, message: '请输入 Web 根地址', trigger: 'blur' }]
 })
+
+const slicingMethodOptions = ref([
+  { label: '全部一段', value: 'all_in_one' },
+  { label: '按标题分段', value: 'by_title' },
+  { label: 'AI检索分段（还没接）', value: 'ai_extract' }
+])
 
 async function submit() {
   if (await BaseFormRef.value?.validate()) {

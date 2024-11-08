@@ -67,6 +67,22 @@
           @blur="datasetForm.selector = datasetForm.selector.trim()"
         />
       </el-form-item>
+      <el-form-item label="切片方式" prop="split_method" v-if="datasetForm.type === '1'">
+        <el-select
+          v-model="datasetForm.split_method"
+          placeholder="请选择切片方式"
+          class="w-full"
+          popper-class="select-slicing-method"
+          :clearable="true"
+        >
+          <el-option
+            v-for="option in slicingMethodOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </el-select>
+      </el-form-item>
     </el-form>
     <template #footer>
       <span class="dialog-footer">
@@ -102,19 +118,28 @@ const dialogVisible = ref<boolean>(false)
 const datasetForm = ref<any>({
   type: '0',
   source_url: '',
-  selector: ''
+  selector: '',
+  split_method: ''
 })
 
 const rules = reactive({
-  source_url: [{ required: true, message: '请输入 Web 根地址', trigger: 'blur' }]
+  source_url: [{ required: true, message: '请输入 Web 根地址', trigger: 'blur' }],
+  split_method: [{ required: true, message: '请选择切片方式', trigger: 'change' }]
 })
+
+const slicingMethodOptions = ref([
+  { label: '全部一段', value: 'all_in_one' },
+  { label: '按标题分段', value: 'by_title' },
+  { label: 'AI检索分段(还没接)', value: 'ai_extract' }
+])
 
 watch(dialogVisible, (bool) => {
   if (!bool) {
     datasetForm.value = {
       type: '0',
       source_url: '',
-      selector: ''
+      selector: '',
+      split_method: '' 
     }
     DatasetFormRef.value?.clearValidate()
   }
@@ -170,6 +195,7 @@ const submitHandle = async () => {
 function radioChange() {
   datasetForm.value.source_url = ''
   datasetForm.value.selector = ''
+  datasetForm.value.split_method = ''
 }
 
 defineExpose({ open })
